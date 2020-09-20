@@ -1,0 +1,39 @@
+GET http://localhost:8000/api/users
+###works!
+
+POST http://localhost:8000/api/users
+content-type: application/json 
+
+{
+    "user_name": "Route.Rest.User",
+    "user_password": "1Aa4Fd333"
+}
+###works!
+
+GET http://localhost:8000/api/users/1/entries
+###works!
+
+POST http://localhost:8000/api/users/entries
+content-type: application/json
+
+{
+    "date": "10.10.20",
+    "duration": "5 mins.",
+    "text": null,
+    "user_id": 1
+}
+###works!
+
+GET http://localhost:8000/api/users/entries/2
+###works!
+
+PUT http://localhost:8000/api/users/entries/7
+content-type: application/json
+
+{
+    "text": "Here's an update to my journal entry!"
+}
+###works!
+
+DELETE http://localhost:8000/api/users/entries/3
+###works!
