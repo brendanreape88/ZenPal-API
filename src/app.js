@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const { NODE_ENV } = require("./config");
 const usersRouter = require("./users/users-router");
 const entriesRouter = require("./entries/entries-router");
+const authRouter = require("./auth/auth-router");
 
 const app = express();
 
@@ -18,8 +19,9 @@ app.get("/", (req, res) => {
   res.send("Hello, world!");
 });
 
-app.use("/api", usersRouter);
-app.use("/api", entriesRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/users", entriesRouter);
+app.use("/api/users", authRouter);
 
 app.use(function errorHandler(error, req, res, next) {
   let response;
