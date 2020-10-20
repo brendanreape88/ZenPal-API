@@ -2,6 +2,7 @@ const knex = require("knex");
 const app = require("../src/app");
 const helpers = require("./test-helpers");
 const supertest = require("supertest");
+const UsersService = require("../src/users/users-service.js");
 
 describe("Entries Endpoints", function () {
   let db;
@@ -24,11 +25,28 @@ describe("Entries Endpoints", function () {
 
   const testUsers = helpers.makeUsersArray();
   const testEntries = helpers.makeEntriesArray();
+  const hashedUsers = testUsers.map((u) => ({
+    user_name: u.user_name,
+    user_password: UsersService.hashPassword(u.user_password),
+  }));
+  const userWithName = (name) => testUsers.find((u) => u.user_name === name);
+
+  function getToken(user_name, agent) {
+    const user = userWithName(user_name);
+    return new Promise((resolve) => {
+      agent
+        .post("/api/users/login")
+        .send(user)
+        .end((err, res) => {
+          resolve("bearer " + res.body.authToken);
+        });
+    });
+  }
 
   beforeEach("insert entries", () => {
     return db
       .into("users")
-      .insert(testUsers)
+      .insert(hashedUsers)
       .then(() => db.into("entries").insert(testEntries));
   });
 
@@ -41,12 +59,18 @@ describe("Entries Endpoints", function () {
   describe(`GET /api/user/:user_id/entries`, () => {
     context(`Given there are no entries for the user`, () => {
       it(`responds with 200 and an empty list`, () => {
-        return supertest(app).get(`/api/users/3/entries`).expect(200, []);
+        const agent = supertest(app);
+        return getToken("TestUser3", agent).then((token) => {
+          return agent
+            .get(`/api/users/3/entries`)
+            .set("Authorization", token)
+            .expect(200, []);
+        });
       });
     });
 
     context(`Given there are entries for the user`, () => {
-      it.only(`responds with 200 and the list of entries`, () => {
+      it(`responds with 200 and the list of entries`, () => {
         const testEntriesForUser1 = [
           {
             date: "1.1.20",
@@ -56,9 +80,13 @@ describe("Entries Endpoints", function () {
             user_id: 1,
           },
         ];
-        return supertest(app)
-          .get(`/api/users/1/entries`)
-          .expect(200, testEntriesForUser1);
+        const agent = supertest(app);
+        return getToken("TestUser1", agent).then((token) => {
+          return agent
+            .get(`/api/users/1/entries`)
+            .set("Authorization", token)
+            .expect(200, testEntriesForUser1);
+        });
       });
     });
   });
@@ -73,10 +101,14 @@ describe("Entries Endpoints", function () {
           text: null,
           user_id: 3,
         };
-        return supertest(app)
-          .post(`/api/users/entries`)
-          .send(newTestEntry)
-          .expect(201, [newTestEntry]);
+        const agent = supertest(app);
+        return getToken("TestUser3", agent).then((token) => {
+          return agent
+            .post(`/api/users/entries`)
+            .set("Authorization", token)
+            .send(newTestEntry)
+            .expect(201, [newTestEntry]);
+        });
       });
     });
   });
@@ -94,15 +126,25 @@ describe("Entries Endpoints", function () {
           text: "Here's a test journal entry!",
           user_id: 2,
         };
-        return supertest(app)
-          .put(`/api/users/entries/2/`)
-          .send(newTextForEntry)
-          .expect(200, [updatedEntry]);
+        const agent = supertest(app);
+        return getToken("TestUser2", agent).then((token) => {
+          return agent
+            .put(`/api/users/entries/2/`)
+            .set("Authorization", token)
+            .send(newTextForEntry)
+            .expect(200, [updatedEntry]);
+        });
       });
     });
     context(`Given the user deletes the entry`, () => {
       it(`responds with 200`, () => {
-        return supertest(app).delete(`/api/users/entries/2/`).expect(200);
+        const agent = supertest(app);
+        return getToken("TestUser1", agent).then((token) => {
+          return agent
+            .delete(`/api/users/entries/2/`)
+            .set("Authorization", token)
+            .expect(200);
+        });
       });
     });
   });

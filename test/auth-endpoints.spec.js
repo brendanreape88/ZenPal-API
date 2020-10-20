@@ -2,8 +2,9 @@ const knex = require("knex");
 const jwt = require("jsonwebtoken");
 const app = require("../src/app");
 const helpers = require("./test-helpers");
+const { hashPassword } = require("../src/users/users-service");
 
-describe("users Endpoints", function () {
+describe("auth Endpoints", function () {
   let db;
 
   before("make knex instance", () => {
@@ -71,9 +72,15 @@ describe("users Endpoints", function () {
   });
 
   it(`responds 200 and JWT users token using secret when valid credentials`, () => {
+    //Correct data in userValidCred
+    //Correct data in REQ BODY in Auth Router
+    //Doesn't trip user not found or passwords don't match
+    //How can you progress from here?
+    //doesn't the user_password need to be bcrypted?
+    const hashedPass = hashPassword(testUser.user_password);
     const userValidCreds = {
       user_name: testUser.user_name,
-      user_password: testUser.user_password,
+      user_password: hashedPass,
     };
     const expectedToken = jwt.sign(
       { user_id: testUser.id },
